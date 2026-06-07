@@ -114,9 +114,17 @@
     </div>
     @auth
     <div class="nav-right">
-        <div class="nav-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
-        <span class="nav-name">{{ auth()->user()->name }}</span>
-        @if(auth()->user()->role === 'admin')<span class="badge-purple">Admin</span>@endif
+        <a href="{{ route('profile.edit') }}" style="display:flex; align-items:center; gap:8px; text-decoration:none; padding:4px 8px; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='transparent'">
+            <div class="nav-avatar">{{ strtoupper(substr(auth()->user()->name,0,1)) }}</div>
+            <div style="display:flex; flex-direction:column; line-height:1.3;">
+                <span class="nav-name">{{ auth()->user()->name }}</span>
+                @if(auth()->user()->role === 'admin')
+                    <span style="font-size:10px; color:#60a5fa; font-weight:600;">Administrator</span>
+                @else
+                    <span style="font-size:10px; color:#64748b;">My Profile</span>
+                @endif
+            </div>
+        </a>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="btn-logout">Logout</button>
