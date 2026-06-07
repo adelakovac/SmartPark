@@ -8,7 +8,10 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect('/map');
+    if (auth()->check()) {
+        return redirect('/map');
+    }
+    return view('welcome');
 });
 
 Route::middleware('auth')->group(function () {
@@ -18,7 +21,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/locations', [ParkingLocationController::class, 'index'])->name('locations.index');
 
     Route::middleware('admin')->group(function () {
-        // !! create and edit MUST be before /{id} !!
         Route::get('/locations/create',        [ParkingLocationController::class, 'create'])->name('locations.create');
         Route::post('/locations',              [ParkingLocationController::class, 'store'])->name('locations.store');
         Route::get('/locations/{id}/edit',     [ParkingLocationController::class, 'edit'])->name('locations.edit');
@@ -42,7 +44,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/users/{id}/delete',  [UserController::class, 'destroy'])->name('admin.users.delete');
     });
 
-    // !! /{id} comes AFTER all named static routes !!
     Route::get('/locations/{id}', [ParkingLocationController::class, 'show'])->name('locations.show');
 
     Route::post('/spots/{spotId}/reserve',   [ReservationController::class, 'store'])->name('spots.reserve');

@@ -118,12 +118,18 @@
 
                 <div class="spot-actions">
                     @if($spot->status === 'available')
-                        <form method="POST" action="{{ route('spots.reserve', $spot->id) }}">
+                        <form method="POST" action="{{ route('spots.reserve', $spot->id) }}" style="width:100%;">
                             @csrf
-                            <button class="btn btn-success btn-sm">Reserve</button>
+                            <select name="duration" style="width:100%; margin-bottom:6px; padding:6px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; font-weight:600; color:#374151; background:white; outline:none;">
+                                <option value="1">⏱ 1 hour</option>
+                                <option value="2" selected>⏱ 2 hours</option>
+                                <option value="4">⏱ 4 hours</option>
+                                <option value="8">⏱ 8 hours</option>
+                            </select>
+                            <button class="btn btn-success btn-sm" style="width:100%; justify-content:center;">Reserve</button>
                         </form>
                     @else
-                        <span class="btn btn-disabled btn-sm">Unavailable</span>
+                        <span class="btn btn-disabled btn-sm" style="width:100%; justify-content:center;">Unavailable</span>
                     @endif
 
                     @if(auth()->user()->role === 'admin')

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservation;
 use App\Models\ParkingSpot;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -28,7 +29,6 @@ class ReservationController extends Controller
 
     public function adminIndex()
     {
-        // Clean expired first
         Reservation::where('expires_at', '<', now())->each(function ($r) {
             if ($r->spot) {
                 $r->spot->update(['status' => 'available']);
@@ -63,10 +63,16 @@ class ReservationController extends Controller
         return redirect()->back()->with('success', 'Reservation cancelled and spot freed.');
     }
 
-    public function store($spotId)
+    public function store(Request $request, $spotId)
     {
+        $validated = $request->validate([
+            'duration' => 'required|in:1,2,4,8',
+        ]);
+
+        $hours = (int) $validated['duration'];
+
         try {
-            DB::transaction(function () use ($spotId) {
+            DB::transaction(function () use ($spotId, $hours) {
                 $spot = ParkingSpot::lockForUpdate()->findOrFail($spotId);
 
                 if ($spot->status !== 'available') {
@@ -80,11 +86,11 @@ class ReservationController extends Controller
                     'user_id'         => auth()->id(),
                     'user_name'       => auth()->user()->name,
                     'reserved_at'     => now(),
-                    'expires_at'      => now()->addHours(2),
+                    'expires_at'      => now()->addHours($hours),
                 ]);
             });
 
-            return redirect()->back()->with('success', 'Spot reserved! You have 2 hours before it expires.');
+            return redirect()->back()->with('success', "Spot reserved for {$hours} hour(s)! It will expire automatically if unused.");
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
