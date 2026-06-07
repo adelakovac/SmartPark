@@ -70,20 +70,24 @@
         }
         .nav-right { display: flex; align-items: center; gap: 12px; }
         .nav-avatar {
-            width: 32px; height: 32px; border-radius: 50%;
+            width: 34px; height: 34px; border-radius: 50%;
             background: var(--blue); color: white;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 13px;
+            font-weight: 700; font-size: 14px;
+            flex-shrink: 0;
         }
-        .nav-name { font-size: 13px; color: #cbd5e1; font-weight: 500; }
-        .badge-purple {
-            background: #ede9fe; color: #5b21b6;
-            padding: 3px 8px; border-radius: 20px;
-            font-size: 11px; font-weight: 700;
+        .nav-user-link {
+            display: flex; align-items: center; gap: 8px;
+            text-decoration: none;
+            padding: 4px 8px; border-radius: 8px;
+            transition: background 0.15s;
         }
+        .nav-user-link:hover { background: rgba(255,255,255,0.07); }
+        .nav-name { font-size: 13px; color: #cbd5e1; font-weight: 500; line-height: 1.2; }
+        .nav-role { font-size: 10px; font-weight: 600; }
         .btn-logout {
             background: transparent; border: 1px solid #334155;
-            color: #94a3b8; padding: 5px 12px; border-radius: 8px;
+            color: #94a3b8; padding: 6px 14px; border-radius: 8px;
             font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
         }
         .btn-logout:hover { border-color: var(--red); color: var(--red); }
@@ -268,7 +272,6 @@
         }
 
         .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
-
         .meta { font-size: 13px; color: var(--slate); }
 
         .table-wrap { overflow-x: auto; }
@@ -306,11 +309,17 @@
 
     @auth
     <div class="nav-right">
-        <div class="nav-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
-        <span class="nav-name">{{ auth()->user()->name }}</span>
-        @if(auth()->user()->role === 'admin')
-            <span class="badge-purple">Admin</span>
-        @endif
+        <a href="{{ route('profile.edit') }}" class="nav-user-link">
+            <div class="nav-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
+            <div style="display:flex; flex-direction:column; line-height:1.3;">
+                <span class="nav-name">{{ auth()->user()->name }}</span>
+                @if(auth()->user()->role === 'admin')
+                    <span class="nav-role" style="color:#60a5fa;">Administrator</span>
+                @else
+                    <span class="nav-role" style="color:#64748b;">My Profile</span>
+                @endif
+            </div>
+        </a>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="btn-logout">Logout</button>
