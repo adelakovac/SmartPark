@@ -9,7 +9,14 @@ class Reservation extends Model
     protected $fillable = [
         'parking_spot_id',
         'user_id',
+        'user_name',
         'reserved_at',
+        'expires_at',
+    ];
+
+    protected $casts = [
+        'reserved_at' => 'datetime',
+        'expires_at'  => 'datetime',
     ];
 
     public function spot()
@@ -20,5 +27,10 @@ class Reservation extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at && $this->expires_at->isPast();
     }
 }

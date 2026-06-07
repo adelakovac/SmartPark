@@ -5,57 +5,89 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Models\ParkingSpot;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
     public function index()
-{
-    // 🔥 AUTO CLEAN EXPIRED RESERVATIONS
-    Reservation::where('expires_at', '<', now())->each(function ($reservation) {
-        $spot = $reservation->spot;
+    {
+        Reservation::where('expires_at', '<', now())->each(function ($r) {
+            if ($r->spot) {
+                $r->spot->update(['status' => 'available']);
+            }
+            $r->delete();
+        });
 
-        if ($spot) {
-            $spot->status = 'available';
-            $spot->save();
-        }
+        $reservations = Reservation::with(['spot.location'])
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->get();
 
-        $reservation->delete();
-    });
+        return view('reservations.index', compact('reservations'));
+    }
 
-    
-    $reservations = Reservation::with(['spot.location', 'user'])
-        ->where('user_id', auth()->id())
-        ->latest()
-        ->get();
+    public function adminIndex()
+    {
+        // Clean expired first
+        Reservation::where('expires_at', '<', now())->each(function ($r) {
+            if ($r->spot) {
+                $r->spot->update(['status' => 'available']);
+            }
+            $r->delete();
+        });
 
-    return view('reservations.index', compact('reservations'));
-}
+        $reservations = Reservation::with(['spot.location', 'user'])
+            ->latest()
+            ->get();
+
+        $totalReservations = $reservations->count();
+        $expiringCount = $reservations->filter(function ($r) {
+            return \Carbon\Carbon::parse($r->expires_at)->diffInMinutes(now()) < 30
+                && \Carbon\Carbon::parse($r->expires_at)->isFuture();
+        })->count();
+
+        return view('admin.reservations', compact('reservations', 'totalReservations', 'expiringCount'));
+    }
+
+    public function adminCancel($id)
+    {
+        $reservation = Reservation::with('spot')->findOrFail($id);
+
+        DB::transaction(function () use ($reservation) {
+            if ($reservation->spot) {
+                $reservation->spot->update(['status' => 'available']);
+            }
+            $reservation->delete();
+        });
+
+        return redirect()->back()->with('success', 'Reservation cancelled and spot freed.');
+    }
+
     public function store($spotId)
     {
-        $spot = ParkingSpot::findOrFail($spotId);
+        try {
+            DB::transaction(function () use ($spotId) {
+                $spot = ParkingSpot::lockForUpdate()->findOrFail($spotId);
 
-        if ($spot->status !== 'available') {
-            return redirect()->back()->with('error', 'Spot is not available!');
+                if ($spot->status !== 'available') {
+                    throw new \Exception('This spot is no longer available.');
+                }
+
+                $spot->update(['status' => 'reserved']);
+
+                Reservation::create([
+                    'parking_spot_id' => $spot->id,
+                    'user_id'         => auth()->id(),
+                    'user_name'       => auth()->user()->name,
+                    'reserved_at'     => now(),
+                    'expires_at'      => now()->addHours(2),
+                ]);
+            });
+
+            return redirect()->back()->with('success', 'Spot reserved! You have 2 hours before it expires.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        $alreadyReserved = Reservation::where('parking_spot_id', $spot->id)->exists();
-
-        if ($alreadyReserved) {
-            return redirect()->back()->with('error', 'Spot is already reserved!');
-        }
-
-        $spot->status = 'reserved';
-        $spot->save();
-
-        Reservation::create([
-    'parking_spot_id' => $spot->id,
-    'user_id' => auth()->id(),
-    'user_name' => auth()->user()->name,
-    'reserved_at' => now(),
-    'expires_at' => now()->addHours(2),
-]);
-
-        return redirect()->back()->with('success', 'Spot reserved successfully!');
     }
 
     public function cancel($id)
@@ -63,15 +95,16 @@ class ReservationController extends Controller
         $reservation = Reservation::findOrFail($id);
 
         if ($reservation->user_id !== Auth::id()) {
-            return redirect()->back()->with('error', 'You are not allowed to cancel this reservation.');
+            return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
-        $spot = ParkingSpot::findOrFail($reservation->parking_spot_id);
-        $spot->status = 'available';
-        $spot->save();
+        DB::transaction(function () use ($reservation) {
+            if ($reservation->spot) {
+                $reservation->spot->update(['status' => 'available']);
+            }
+            $reservation->delete();
+        });
 
-        $reservation->delete();
-
-        return redirect()->route('reservations.index')->with('success', 'Reservation cancelled successfully!');
+        return redirect()->route('reservations.index')->with('success', 'Reservation cancelled successfully.');
     }
 }

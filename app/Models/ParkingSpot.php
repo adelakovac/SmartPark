@@ -22,4 +22,10 @@ class ParkingSpot extends Model
     {
         return $this->hasMany(Reservation::class);
     }
+
+    public function activeReservation()
+    {
+        return $this->hasOne(Reservation::class, 'parking_spot_id')
+                    ->where('expires_at', '>', now());
+    }
 }

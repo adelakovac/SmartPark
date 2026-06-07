@@ -12,10 +12,19 @@ class ParkingLocation extends Model
         'city',
         'description',
         'total_spots',
+        'latitude',
+        'longitude',
+        'hourly_rate',
+        'opening_hours',
     ];
 
     public function spots()
-{
-    return $this->hasMany(ParkingSpot::class);
-}
+    {
+        return $this->hasMany(ParkingSpot::class);
+    }
+
+    public function availableSpots()
+    {
+        return $this->spots()->where('status', 'available');
+    }
 }

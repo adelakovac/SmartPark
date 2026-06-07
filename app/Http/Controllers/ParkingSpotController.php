@@ -20,8 +20,8 @@ class ParkingSpotController extends Controller
 
         $validated = $request->validate([
             'spot_number' => 'required|string|max:50',
-            'status' => 'required|in:available,occupied,reserved',
-            'type' => 'required|in:standard,electric,disabled,garage',
+            'status'      => 'required|in:available,occupied',
+            'type'        => 'required|in:standard,electric,disabled,garage',
         ]);
 
         $exists = ParkingSpot::where('parking_location_id', $location->id)
@@ -29,17 +29,18 @@ class ParkingSpotController extends Controller
             ->exists();
 
         if ($exists) {
-            return redirect()->back()->with('error', 'Spot number already exists for this location.');
+            return redirect()->back()->with('error', 'Spot number already exists at this location.');
         }
 
         ParkingSpot::create([
             'parking_location_id' => $location->id,
-            'spot_number' => $validated['spot_number'],
-            'status' => $validated['status'],
-            'type' => $validated['type'],
+            'spot_number'         => $validated['spot_number'],
+            'status'              => $validated['status'],
+            'type'                => $validated['type'],
         ]);
 
-        return redirect('/locations/' . $location->id)->with('success', 'Parking spot added successfully!');
+        return redirect()->route('locations.show', $location->id)
+            ->with('success', 'Parking spot added successfully!');
     }
 
     public function toggle($id)
@@ -47,18 +48,19 @@ class ParkingSpotController extends Controller
         $spot = ParkingSpot::findOrFail($id);
 
         if ($spot->status === 'reserved') {
-            return redirect()->back()->with('error', 'Reserved spot cannot be toggled.');
+            return redirect()->back()->with('error', 'Cannot toggle a reserved spot.');
         }
 
-        $spot->status = $spot->status === 'available' ? 'occupied' : 'available';
-        $spot->save();
+        $spot->update([
+            'status' => $spot->status === 'available' ? 'occupied' : 'available',
+        ]);
 
-        return redirect()->back()->with('success', 'Spot status updated!');
+        return redirect()->back()->with('success', 'Spot status updated.');
     }
 
     public function edit($id)
     {
-        $spot = ParkingSpot::findOrFail($id);
+        $spot = ParkingSpot::with('location')->findOrFail($id);
         return view('spots.edit', compact('spot'));
     }
 
@@ -68,8 +70,8 @@ class ParkingSpotController extends Controller
 
         $validated = $request->validate([
             'spot_number' => 'required|string|max:50',
-            'type' => 'required|in:standard,electric,disabled,garage',
-            'status' => 'required|in:available,occupied,reserved',
+            'type'        => 'required|in:standard,electric,disabled,garage',
+            'status'      => 'required|in:available,occupied,reserved',
         ]);
 
         $exists = ParkingSpot::where('parking_location_id', $spot->parking_location_id)
@@ -78,22 +80,23 @@ class ParkingSpotController extends Controller
             ->exists();
 
         if ($exists) {
-            return redirect()->back()->with('error', 'Spot number already exists for this location.');
+            return redirect()->back()->with('error', 'Spot number already exists at this location.');
         }
 
         $spot->update($validated);
 
-        return redirect('/locations/' . $spot->parking_location_id)->with('success', 'Spot updated successfully!');
+        return redirect()->route('locations.show', $spot->parking_location_id)
+            ->with('success', 'Spot updated successfully!');
     }
 
     public function destroy($id)
     {
         $spot = ParkingSpot::findOrFail($id);
         $locationId = $spot->parking_location_id;
-
         $spot->delete();
 
-        return redirect('/locations/' . $locationId)->with('success', 'Spot deleted successfully!');
+        return redirect()->route('locations.show', $locationId)
+            ->with('success', 'Spot deleted successfully.');
     }
 
     public function generate($id)
@@ -101,39 +104,30 @@ class ParkingSpotController extends Controller
         $location = ParkingLocation::findOrFail($id);
 
         if ($location->spots()->count() > 0) {
-            return redirect()->back()->with('error', 'Spots already exist for this location.');
+            return redirect()->back()->with('error', 'Spots already exist for this location. Delete them first.');
         }
 
-        $totalSpots = (int) $location->total_spots;
-
-        $letters = range('A', 'Z');
+        $total     = (int) $location->total_spots;
+        $letters   = range('A', 'Z');
         $generated = 0;
-        $rowIndex = 0;
-        $number = 1;
+        $rowIndex  = 0;
+        $number    = 1;
 
-        while ($generated < $totalSpots) {
-            if (!isset($letters[$rowIndex])) {
-                return redirect()->back()->with('error', 'Too many spots to generate with current naming logic.');
-            }
-
-            $spotNumber = $letters[$rowIndex] . $number;
+        while ($generated < $total) {
+            if (!isset($letters[$rowIndex])) break;
 
             ParkingSpot::create([
                 'parking_location_id' => $location->id,
-                'spot_number' => $spotNumber,
-                'type' => 'standard',
-                'status' => 'available',
+                'spot_number'         => $letters[$rowIndex] . str_pad($number, 2, '0', STR_PAD_LEFT),
+                'type'                => 'standard',
+                'status'              => 'available',
             ]);
 
             $generated++;
             $number++;
-
-            if ($number > 20) {
-                $number = 1;
-                $rowIndex++;
-            }
+            if ($number > 20) { $number = 1; $rowIndex++; }
         }
 
-        return redirect()->back()->with('success', 'Spots generated successfully!');
+        return redirect()->back()->with('success', "{$generated} spots generated successfully!");
     }
 }

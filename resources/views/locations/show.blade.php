@@ -1,136 +1,174 @@
 @extends('layouts.app')
+@section('title', $location->name)
 
 @section('content')
-    <div class="top-row">
-        <div>
-            <div class="page-title">{{ $location->name }}</div>
-            <div class="subtitle">{{ $location->address }}, {{ $location->city }}</div>
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ $location->name }}</div>
+        <div class="page-subtitle">
+            📍 {{ $location->address }}, {{ $location->city }}
+            @if($location->hourly_rate) · 💶 €{{ number_format($location->hourly_rate, 2) }}/hr @endif
+            @if($location->opening_hours) · ⏰ {{ $location->opening_hours }} @endif
         </div>
-
-        <div class="actions">
-            <a href="/locations/{{ $location->id }}/spots/create" class="btn btn-primary">+ Add Parking Spot</a>
-
+    </div>
+    <div class="actions">
+        @if(auth()->user()->role === 'admin')
+            <a href="/locations/{{ $location->id }}/spots/create" class="btn btn-primary">+ Add Spot</a>
             <form method="POST" action="{{ route('spots.generate', $location->id) }}">
                 @csrf
-                <button class="btn btn-primary" type="submit">⚡ Generate Spots</button>
+                <button class="btn btn-amber" type="submit">⚡ Generate Spots</button>
             </form>
-
-            <a href="/locations" class="btn btn-success">← Back to Locations</a>
-        </div>
+            <a href="{{ route('locations.edit', $location->id) }}" class="btn btn-secondary">✏️ Edit</a>
+            <form method="POST" action="{{ route('locations.delete', $location->id) }}"
+                  onsubmit="return confirm('Delete {{ $location->name }} and ALL its spots? This cannot be undone.');">
+                @csrf
+                <button class="btn btn-danger" type="submit">🗑 Delete</button>
+            </form>
+        @endif
+        <a href="/locations" class="btn btn-secondary">← Back</a>
     </div>
+</div>
 
-    <div class="grid">
-        <div class="card">
-            <div class="label">Total Spots</div>
-            <div class="stat-number">{{ $stats['total'] }}</div>
-        </div>
-
-        <div class="card">
-            <div class="label">Available Spots</div>
-            <div class="stat-number">{{ $stats['available'] }}</div>
-        </div>
-
-        <div class="card">
-            <div class="label">Occupied Spots</div>
-            <div class="stat-number">{{ $stats['occupied'] }}</div>
-        </div>
-
-        <div class="card">
-            <div class="label">Reserved Spots</div>
-            <div class="stat-number">{{ $stats['reserved'] }}</div>
-        </div>
+@if($location->description)
+    <div class="alert" style="background:#f8fafc; border-left:4px solid #3b82f6; color:#374151; margin-bottom:20px;">
+        ℹ️ {{ $location->description }}
     </div>
+@endif
 
-    <div class="filter-box">
-        <form method="GET" action="{{ route('locations.show', $location->id) }}" class="filter-bar">
-            <div>
+<div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="stat-card navy">
+        <div class="stat-label">Total Spots</div>
+        <div class="stat-number">{{ $stats['total'] }}</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Available</div>
+        <div class="stat-number green">{{ $stats['available'] }}</div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-label">Reserved</div>
+        <div class="stat-number amber">{{ $stats['reserved'] }}</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-label">Occupied</div>
+        <div class="stat-number red">{{ $stats['occupied'] }}</div>
+    </div>
+</div>
+
+<div class="filter-box">
+    <form method="GET" action="{{ route('locations.show', $location->id) }}">
+        <div class="filter-row">
+            <div class="filter-group">
                 <label>Search Spot</label>
-                <input
-                    type="text"
-                    name="search"
-                    class="small-input"
-                    placeholder="Example: A1"
-                    value="{{ request('search') }}"
-                >
+                <input type="text" name="search" placeholder="e.g. A01" value="{{ request('search') }}">
             </div>
-
-            <div>
+            <div class="filter-group">
                 <label>Status</label>
                 <select name="status">
                     <option value="">All</option>
                     <option value="available" {{ request('status') == 'available' ? 'selected' : '' }}>Available</option>
-                    <option value="occupied" {{ request('status') == 'occupied' ? 'selected' : '' }}>Occupied</option>
-                    <option value="reserved" {{ request('status') == 'reserved' ? 'selected' : '' }}>Reserved</option>
+                    <option value="reserved"  {{ request('status') == 'reserved'  ? 'selected' : '' }}>Reserved</option>
+                    <option value="occupied"  {{ request('status') == 'occupied'  ? 'selected' : '' }}>Occupied</option>
                 </select>
             </div>
-
-            <div class="actions" style="margin-bottom:0;">
-                <button type="submit" class="btn btn-primary">Search / Filter</button>
-                <a href="{{ route('locations.show', $location->id) }}" class="btn btn-danger">Reset</a>
+            <div class="filter-group">
+                <label>Type</label>
+                <select name="type">
+                    <option value="">All Types</option>
+                    <option value="standard" {{ request('type') == 'standard' ? 'selected' : '' }}>🚗 Standard</option>
+                    <option value="electric" {{ request('type') == 'electric' ? 'selected' : '' }}>⚡ Electric</option>
+                    <option value="disabled" {{ request('type') == 'disabled' ? 'selected' : '' }}>♿ Disabled</option>
+                    <option value="garage"   {{ request('type') == 'garage'   ? 'selected' : '' }}>🏢 Garage</option>
+                </select>
             </div>
-        </form>
+            <div class="filter-group" style="justify-content:flex-end;">
+                <label>&nbsp;</label>
+                <div class="actions" style="margin:0;">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{{ route('locations.show', $location->id) }}" class="btn btn-secondary">Reset</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="section-title">Parking Spots
+    <span style="font-weight:400; font-size:14px; color:#64748b;">({{ $spots->total() }} spots)</span>
+</div>
+
+@if($spots->count() > 0)
+    <div class="spot-grid">
+        @foreach($spots as $spot)
+            @php
+                $icons = ['standard'=>'🚗','electric'=>'⚡','disabled'=>'♿','garage'=>'🏢'];
+                $icon  = $icons[$spot->type] ?? '🚗';
+            @endphp
+            <div class="spot-card {{ $spot->status }}">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div class="spot-number-text">{{ $spot->spot_number }}</div>
+                    <span style="font-size:18px;">{{ $icon }}</span>
+                </div>
+                <div class="spot-type">{{ ucfirst($spot->type) }}</div>
+                @if($spot->status === 'available')
+                    <span class="badge badge-green">Available</span>
+                @elseif($spot->status === 'reserved')
+                    <span class="badge badge-amber">Reserved</span>
+                @else
+                    <span class="badge badge-red">Occupied</span>
+                @endif
+
+                <div class="spot-actions">
+                    @if($spot->status === 'available')
+                        <form method="POST" action="{{ route('spots.reserve', $spot->id) }}">
+                            @csrf
+                            <button class="btn btn-success btn-sm">Reserve</button>
+                        </form>
+                    @else
+                        <span class="btn btn-disabled btn-sm">Unavailable</span>
+                    @endif
+
+                    @if(auth()->user()->role === 'admin')
+                        @if($spot->status !== 'reserved')
+                            <form method="POST" action="{{ route('spots.toggle', $spot->id) }}">
+                                @csrf
+                                <button class="btn btn-secondary btn-sm">Toggle</button>
+                            </form>
+                        @endif
+                        <a href="{{ route('spots.edit', $spot->id) }}" class="btn btn-secondary btn-sm">Edit</a>
+                        <form method="POST" action="{{ route('spots.delete', $spot->id) }}"
+                              onsubmit="return confirm('Delete spot {{ $spot->spot_number }}?');">
+                            @csrf
+                            <button class="btn btn-danger btn-sm">Del</button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        @endforeach
     </div>
 
-    <div class="section-title">Parking Spots</div>
-
-    @if($spots->count() > 0)
-        <div class="spot-list">
-            @foreach($spots as $spot)
-                <div>
-                    <form method="POST" action="{{ route('spots.toggle', $spot->id) }}">
-                        @csrf
-                        <button type="submit" style="all: unset; cursor: pointer; width: 100%;">
-                            <div class="spot-card {{ $spot->status }}">
-                                <div class="spot-number">{{ $spot->spot_number }}</div>
-
-                                <div class="meta">Type: {{ ucfirst($spot->type) }}</div>
-
-                                <span class="badge {{ $spot->status }}">
-                                    {{ ucfirst($spot->status) }}
-                                </span>
-                            </div>
-                        </button>
-                    </form>
-
-                    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-                        @if($spot->status === 'available')
-                            <form method="POST" action="{{ route('spots.reserve', $spot->id) }}">
-                                @csrf
-                                <button class="btn btn-success" type="submit">Reserve</button>
-                            </form>
-                        @else
-                            <button class="btn btn-disabled" disabled>Not Available</button>
-                        @endif
-
-                        <a href="{{ route('spots.edit', $spot->id) }}" class="btn btn-primary">Edit</a>
-
-                        <form method="POST" action="{{ route('spots.delete', $spot->id) }}" onsubmit="return confirm('Are you sure you want to delete this spot?');">
-                            @csrf
-                            <button class="btn btn-danger" type="submit">Delete</button>
-                        </form>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-
-        <div class="pagination-wrap">
-            @if($spots->onFirstPage())
-                <span class="page-link disabled">← Previous</span>
+    <div class="pagination">
+        @if($spots->onFirstPage())
+            <span class="page-btn disabled">← Prev</span>
+        @else
+            <a class="page-btn" href="{{ $spots->previousPageUrl() }}">← Prev</a>
+        @endif
+        <span class="page-btn current">{{ $spots->currentPage() }} / {{ $spots->lastPage() }}</span>
+        @if($spots->hasMorePages())
+            <a class="page-btn" href="{{ $spots->nextPageUrl() }}">Next →</a>
+        @else
+            <span class="page-btn disabled">Next →</span>
+        @endif
+    </div>
+@else
+    <div class="empty-state">
+        <div class="empty-icon">🅿️</div>
+        <div class="empty-title">No spots found</div>
+        <div class="empty-text">
+            @if(request()->hasAny(['search','status','type']))
+                Try resetting your filters.
             @else
-                <a class="page-link" href="{{ $spots->previousPageUrl() }}">← Previous</a>
-            @endif
-
-            <span class="page-link">Page {{ $spots->currentPage() }} / {{ $spots->lastPage() }}</span>
-
-            @if($spots->hasMorePages())
-                <a class="page-link" href="{{ $spots->nextPageUrl() }}">Next →</a>
-            @else
-                <span class="page-link disabled">Next →</span>
+                Use "Generate Spots" to automatically create spots for this location.
             @endif
         </div>
-    @else
-        <div class="empty-state">
-            No parking spots found for this filter.
-        </div>
-    @endif
+    </div>
+@endif
 @endsection
