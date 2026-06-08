@@ -124,7 +124,7 @@
     <div class="actions">
 
         {{-- FAVOURITE BUTTON — always visible --}}
-        @php $isFav = auth()->user()->hasFavorited($location->id); @endphp
+        @php $isFav = \App\Models\Favorite::where('user_id', auth()->id())->where('parking_location_id', $location->id)->exists(); @endphp
         <form method="POST" action="{{ route('favorites.toggle', $location->id) }}">
             @csrf
             <button type="submit" class="fav-btn {{ $isFav ? 'active' : 'inactive' }}">
