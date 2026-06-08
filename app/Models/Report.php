@@ -1,0 +1,9 @@
+<?php
+namespace App\Models;
+use Illuminate\Database\Eloquent\Model;
+
+class Report extends Model {
+    protected $fillable = ['user_id', 'parking_spot_id', 'type', 'message', 'status'];
+    public function user() { return $this->belongsTo(User::class); }
+    public function spot() { return $this->belongsTo(ParkingSpot::class, 'parking_spot_id'); }
+}

@@ -391,10 +391,12 @@
         <a href="/dashboard"    class="{{ request()->is('dashboard')     ? 'active' : '' }}">Dashboard</a>
         <a href="/locations"    class="{{ request()->is('locations*')    ? 'active' : '' }}">Locations</a>
         <a href="/reservations" class="{{ request()->is('reservations*') ? 'active' : '' }}">My Reservations</a>
+        <a href="/favorites"    class="{{ request()->is('favorites*')    ? 'active' : '' }}">♡ Favourites</a>
         @if(auth()->check() && auth()->user()->role === 'admin')
             <a href="/locations/create"   class="admin-link">+ Add Location</a>
             <a href="/admin/reservations" class="admin-link">🎫 Reservations</a>
             <a href="/admin/users"        class="admin-link">👥 Users</a>
+            <a href="/admin/reports"      class="admin-link">🚩 Reports</a>
         @endif
     </div>
 
@@ -427,10 +429,12 @@
     <a href="/locations">📍 Locations</a>
     <a href="/reservations">🎫 My Reservations</a>
     <a href="{{ route('profile.edit') }}">👤 My Profile</a>
+    <a href="/favorites">♡ Favourites</a>
     @if(auth()->user()->role === 'admin')
         <a href="/locations/create" class="admin-m">+ Add Location</a>
         <a href="/admin/reservations" class="admin-m">🎫 All Reservations</a>
         <a href="/admin/users" class="admin-m">👥 Users</a>
+        <a href="/admin/reports" class="admin-m">🚩 Reports</a>
     @endif
     <form method="POST" action="{{ route('logout') }}" style="margin:0;">
         @csrf

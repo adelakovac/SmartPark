@@ -1,16 +1,15 @@
 <?php
-
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ParkingLocationController;
 use App\Http\Controllers\ParkingSpotController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect('/map');
-    }
+    if (auth()->check()) return redirect('/map');
     return view('welcome');
 });
 
@@ -19,6 +18,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [ParkingLocationController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/locations', [ParkingLocationController::class, 'index'])->name('locations.index');
+
+    Route::get('/favorites',                     [FavoriteController::class, 'index'])->name('favorites.index');
+    Route::post('/favorites/{locationId}/toggle', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
+
+    Route::post('/spots/{spotId}/report', [ReportController::class, 'store'])->name('spots.report');
 
     Route::middleware('admin')->group(function () {
         Route::get('/locations/create',        [ParkingLocationController::class, 'create'])->name('locations.create');
@@ -37,6 +41,10 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/admin/reservations',              [ReservationController::class, 'adminIndex'])->name('admin.reservations');
         Route::post('/admin/reservations/{id}/cancel', [ReservationController::class, 'adminCancel'])->name('admin.reservations.cancel');
+
+        Route::get('/admin/reports',               [ReportController::class, 'adminIndex'])->name('admin.reports');
+        Route::post('/admin/reports/{id}/resolve', [ReportController::class, 'resolve'])->name('admin.reports.resolve');
+        Route::post('/admin/reports/{id}/delete',  [ReportController::class, 'destroy'])->name('admin.reports.delete');
 
         Route::get('/admin/users',               [UserController::class, 'index'])->name('admin.users');
         Route::post('/admin/users/{id}/promote', [UserController::class, 'promote'])->name('admin.users.promote');
