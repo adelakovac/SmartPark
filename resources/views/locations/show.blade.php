@@ -110,6 +110,12 @@
     }
 </style>
 
+@php
+    $isFav = \App\Models\Favorite::where('user_id', auth()->id())
+        ->where('parking_location_id', $location->id)
+        ->exists();
+@endphp
+
 <div class="page-header">
     <div>
         <div class="page-title">{{ $location->name }}</div>
@@ -120,11 +126,8 @@
         </div>
     </div>
 
-    {{-- ACTIONS — Save button is here for ALL users, admin buttons below --}}
     <div class="actions">
 
-        {{-- FAVOURITE BUTTON — always visible --}}
-        @php $isFav = \App\Models\Favorite::where('user_id', auth()->id())->where('parking_location_id', $location->id)->exists(); @endphp
         <form method="POST" action="{{ route('favorites.toggle', $location->id) }}">
             @csrf
             <button type="submit" class="fav-btn {{ $isFav ? 'active' : 'inactive' }}">
@@ -132,7 +135,6 @@
             </button>
         </form>
 
-        {{-- ADMIN ONLY --}}
         @if(auth()->user()->role === 'admin')
             <a href="/locations/{{ $location->id }}/spots/create" class="btn btn-primary">+ Add Spot</a>
             <form method="POST" action="{{ route('spots.generate', $location->id) }}">
