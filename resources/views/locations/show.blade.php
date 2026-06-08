@@ -113,20 +113,26 @@
 <div class="page-header">
     <div>
         <div class="page-title">{{ $location->name }}</div>
-        <div class="page-subtitle" style="color:rgba(100,116,139,1);">
+        <div class="page-subtitle">
             {{ $location->address }}, {{ $location->city }}
             @if($location->hourly_rate) &nbsp;·&nbsp; €{{ number_format($location->hourly_rate,2) }}/hr @endif
             @if($location->opening_hours) &nbsp;·&nbsp; {{ $location->opening_hours }} @endif
         </div>
     </div>
+
+    {{-- ACTIONS — Save button is here for ALL users, admin buttons below --}}
     <div class="actions">
+
+        {{-- FAVOURITE BUTTON — always visible --}}
+        @php $isFav = auth()->user()->hasFavorited($location->id); @endphp
         <form method="POST" action="{{ route('favorites.toggle', $location->id) }}">
             @csrf
-            @php $isFav = auth()->user()->hasFavorited($location->id); @endphp
             <button type="submit" class="fav-btn {{ $isFav ? 'active' : 'inactive' }}">
                 {{ $isFav ? '♥ Saved' : '♡ Save' }}
             </button>
         </form>
+
+        {{-- ADMIN ONLY --}}
         @if(auth()->user()->role === 'admin')
             <a href="/locations/{{ $location->id }}/spots/create" class="btn btn-primary">+ Add Spot</a>
             <form method="POST" action="{{ route('spots.generate', $location->id) }}">
@@ -140,6 +146,7 @@
                 <button class="btn btn-danger" type="submit">Delete</button>
             </form>
         @endif
+
         <a href="/locations" class="btn btn-secondary">← Back</a>
     </div>
 </div>
