@@ -45,10 +45,10 @@
     .modal-cancel { padding:9px 18px; border-radius:8px; font-size:13px; background:transparent; border:0.5px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); cursor:pointer; font-family:inherit; }
     .modal-submit { padding:9px 18px; border-radius:8px; font-size:13px; background:#f59e0b; border:none; color:#0f172a; cursor:pointer; font-family:inherit; font-weight:600; }
     .fav-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:10px; font-size:13px; font-weight:500; cursor:pointer; border:none; font-family:inherit; transition:all 0.15s; }
-    .fav-btn.active { background:rgba(239,68,68,0.15); color:#f87171; border:0.5px solid rgba(239,68,68,0.3); }
-    .fav-btn.inactive { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.5); border:0.5px solid rgba(255,255,255,0.1); }
+    .fav-btn.active { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
+    .fav-btn.inactive { background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0; }
     .fav-btn.active:hover { background:rgba(239,68,68,0.25); }
-    .fav-btn.inactive:hover { background:rgba(255,255,255,0.1); color:white; }
+    .fav-btn.inactive:hover { background:#e2e8f0; color:#374151; }
     .dark-stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
     .dark-stat { background:#0f172a; border:0.5px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; }
     .dark-stat-label { font-size:11px; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
