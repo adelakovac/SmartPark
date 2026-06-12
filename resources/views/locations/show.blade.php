@@ -21,10 +21,12 @@
     .status-dot.available { color:#22c55e; } .status-dot.available::before { background:#22c55e; }
     .status-dot.reserved  { color:#f59e0b; } .status-dot.reserved::before  { background:#f59e0b; }
     .status-dot.occupied  { color:#ef4444; } .status-dot.occupied::before  { background:#ef4444; }
-    .dur-select { width:100%; font-size:12px; padding:7px 10px; border:0.5px solid rgba(255,255,255,0.1); border-radius:8px; margin-bottom:8px; background:rgba(255,255,255,0.05); color:white; outline:none; }
+    .dur-select { width:100%; font-size:12px; padding:7px 10px; border:0.5px solid rgba(255,255,255,0.1); border-radius:8px; margin-bottom:4px; background:rgba(255,255,255,0.05); color:white; outline:none; }
+    .deposit-info { font-size:11px; color:#60a5fa; margin-bottom:8px; text-align:center; min-height:16px; }
     .btn-reserve-dark { width:100%; padding:8px; background:#2563eb; color:white; border:none; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; }
     .btn-reserve-dark:hover { background:#1d4ed8; }
     .btn-unavail { width:100%; padding:8px; background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.25); border:0.5px solid rgba(255,255,255,0.06); border-radius:8px; font-size:13px; cursor:not-allowed; font-family:inherit; }
+    .limit-warning { font-size:11px; color:#f87171; background:rgba(239,68,68,0.08); border:0.5px solid rgba(239,68,68,0.2); border-radius:6px; padding:8px; text-align:center; margin-bottom:6px; }
     .admin-actions { display:flex; gap:5px; margin-top:8px; }
     .admin-btn { flex:1; padding:6px 0; font-size:11px; border-radius:6px; cursor:pointer; border:none; font-family:inherit; font-weight:500; }
     .admin-btn-ghost { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.5); border:0.5px solid rgba(255,255,255,0.08); }
@@ -63,22 +65,25 @@
     @media(max-width:400px) { .spot-grid-dark { grid-template-columns:1fr; } }
 </style>
 
+{{-- ── PAGE HEADER ─────────────────────────────────────────────────────── --}}
 <div class="page-header">
     <div>
         <div class="page-title">{{ $location->name }}</div>
         <div class="page-subtitle">
             {{ $location->address }}, {{ $location->city }}
-            @if($location->hourly_rate) &nbsp;·&nbsp; €{{ number_format($location->hourly_rate,2) }}/hr @endif
+            @if($location->hourly_rate) &nbsp;·&nbsp; {{ number_format($location->hourly_rate, 2) }} KM/hr @endif
             @if($location->opening_hours) &nbsp;·&nbsp; {{ $location->opening_hours }} @endif
         </div>
     </div>
     <div class="actions">
+        {{-- Favourite toggle --}}
         <form method="POST" action="{{ route('favorites.toggle', $location->id) }}">
             @csrf
             <button type="submit" class="fav-btn {{ $isFav ? 'active' : 'inactive' }}">
                 {{ $isFav ? '♥ Saved' : '♡ Save' }}
             </button>
         </form>
+
         @if(auth()->user()->role === 'admin')
             <a href="/locations/{{ $location->id }}/spots/create" class="btn btn-primary">+ Add Spot</a>
             <form method="POST" action="{{ route('spots.generate', $location->id) }}">
@@ -92,23 +97,39 @@
                 <button class="btn btn-danger" type="submit">Delete</button>
             </form>
         @endif
+
         <a href="/locations" class="btn btn-secondary">← Back</a>
     </div>
 </div>
 
+{{-- ── DESCRIPTION ─────────────────────────────────────────────────────── --}}
 @if($location->description)
     <div style="background:rgba(37,99,235,0.08);border:0.5px solid rgba(37,99,235,0.2);border-radius:10px;padding:12px 16px;color:#64748b;font-size:14px;margin-bottom:20px;">
         {{ $location->description }}
     </div>
 @endif
 
+{{-- ── STATS ────────────────────────────────────────────────────────────── --}}
 <div class="dark-stat-grid">
-    <div class="dark-stat"><div class="dark-stat-label">Total Spots</div><div class="dark-stat-num" style="color:#f1f5f9;">{{ $stats['total'] }}</div></div>
-    <div class="dark-stat"><div class="dark-stat-label">Available</div><div class="dark-stat-num" style="color:#22c55e;">{{ $stats['available'] }}</div></div>
-    <div class="dark-stat"><div class="dark-stat-label">Reserved</div><div class="dark-stat-num" style="color:#f59e0b;">{{ $stats['reserved'] }}</div></div>
-    <div class="dark-stat"><div class="dark-stat-label">Occupied</div><div class="dark-stat-num" style="color:#ef4444;">{{ $stats['occupied'] }}</div></div>
+    <div class="dark-stat">
+        <div class="dark-stat-label">Total Spots</div>
+        <div class="dark-stat-num" style="color:#f1f5f9;">{{ $stats['total'] }}</div>
+    </div>
+    <div class="dark-stat">
+        <div class="dark-stat-label">Available</div>
+        <div class="dark-stat-num" style="color:#22c55e;">{{ $stats['available'] }}</div>
+    </div>
+    <div class="dark-stat">
+        <div class="dark-stat-label">Reserved</div>
+        <div class="dark-stat-num" style="color:#f59e0b;">{{ $stats['reserved'] }}</div>
+    </div>
+    <div class="dark-stat">
+        <div class="dark-stat-label">Occupied</div>
+        <div class="dark-stat-num" style="color:#ef4444;">{{ $stats['occupied'] }}</div>
+    </div>
 </div>
 
+{{-- ── FILTERS ──────────────────────────────────────────────────────────── --}}
 <div class="dark-filter">
     <form method="GET" action="{{ route('locations.show', $location->id) }}">
         <div class="filter-row">
@@ -120,19 +141,19 @@
                 <label>Status</label>
                 <select name="status">
                     <option value="">All</option>
-                    <option value="available" {{ request('status')=='available'?'selected':'' }}>Available</option>
-                    <option value="reserved"  {{ request('status')=='reserved' ?'selected':'' }}>Reserved</option>
-                    <option value="occupied"  {{ request('status')=='occupied' ?'selected':'' }}>Occupied</option>
+                    <option value="available" {{ request('status') == 'available' ? 'selected' : '' }}>Available</option>
+                    <option value="reserved"  {{ request('status') == 'reserved'  ? 'selected' : '' }}>Reserved</option>
+                    <option value="occupied"  {{ request('status') == 'occupied'  ? 'selected' : '' }}>Occupied</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label>Type</label>
                 <select name="type">
                     <option value="">All Types</option>
-                    <option value="standard" {{ request('type')=='standard'?'selected':'' }}>Standard</option>
-                    <option value="electric" {{ request('type')=='electric'?'selected':'' }}>Electric</option>
-                    <option value="disabled" {{ request('type')=='disabled'?'selected':'' }}>Disabled</option>
-                    <option value="garage"   {{ request('type')=='garage'  ?'selected':'' }}>Garage</option>
+                    <option value="standard" {{ request('type') == 'standard' ? 'selected' : '' }}>Standard</option>
+                    <option value="electric" {{ request('type') == 'electric' ? 'selected' : '' }}>Electric</option>
+                    <option value="disabled" {{ request('type') == 'disabled' ? 'selected' : '' }}>Disabled</option>
+                    <option value="garage"   {{ request('type') == 'garage'   ? 'selected' : '' }}>Garage</option>
                 </select>
             </div>
             <div class="filter-group" style="justify-content:flex-end;">
@@ -146,33 +167,77 @@
     </form>
 </div>
 
+{{-- ── SPOT GRID ────────────────────────────────────────────────────────── --}}
 <div class="section-title">
     Parking Spots
     <span style="font-weight:400;font-size:14px;color:#64748b;">({{ $spots->total() }} spots)</span>
 </div>
 
+@php
+    // Check once outside the loop — avoids N+1 queries
+    $hasActiveReservation = \App\Models\Reservation::where('user_id', auth()->id())
+        ->where('expires_at', '>', now())
+        ->exists();
+    $hourlyRate = $location->hourly_rate ?? 0;
+@endphp
+
 @if($spots->count() > 0)
     <div class="spot-grid-dark">
         @foreach($spots as $spot)
             <div class="spot-card-dark {{ $spot->status }}">
+
                 <div class="spot-num">{{ $spot->spot_number }}</div>
                 <div class="spot-typ">{{ $spot->type }}</div>
                 <div class="status-dot {{ $spot->status }}">{{ ucfirst($spot->status) }}</div>
+
+                {{-- ── Reserve / Status block ── --}}
                 @if($spot->status === 'available')
-                    <form method="POST" action="{{ route('spots.reserve', $spot->id) }}">
-                        @csrf
-                        <select name="duration" class="dur-select">
-                            <option value="1">1 hour</option>
-                            <option value="2" selected>2 hours</option>
-                            <option value="4">4 hours</option>
-                            <option value="8">8 hours</option>
-                        </select>
-                        <button type="submit" class="btn-reserve-dark">Reserve</button>
-                    </form>
+
+                    @if($hasActiveReservation)
+                        {{-- User already has 1 active reservation --}}
+                        <div class="limit-warning">
+                            ⚠ You already have an active reservation
+                        </div>
+                        <button class="btn-unavail" disabled>Limit reached</button>
+
+                    @else
+                        {{-- Normal reservation form --}}
+                        <form method="POST" action="{{ route('spots.reserve', $spot->id) }}">
+                            @csrf
+                            <select
+                                name="duration"
+                                class="dur-select"
+                                id="dur-{{ $spot->id }}"
+                                onchange="updateDeposit({{ $spot->id }}, {{ $hourlyRate }}, this.value)">
+                                <option value="1">1 hour — 10% deposit</option>
+                                <option value="2" selected>2 hours — 20% deposit</option>
+                                <option value="4">4 hours — 35% deposit</option>
+                                <option value="8">8 hours — 50% deposit</option>
+                            </select>
+
+                            <div class="deposit-info" id="deposit-info-{{ $spot->id }}">
+                                @if($hourlyRate > 0)
+                                    Deposit: {{ number_format($hourlyRate * 2 * 0.20, 2) }} KM
+                                    (of {{ number_format($hourlyRate * 2, 2) }} KM total)
+                                @else
+                                    Free parking — no deposit
+                                @endif
+                            </div>
+
+                            <button type="submit" class="btn-reserve-dark">Reserve</button>
+                        </form>
+                    @endif
+
                 @else
                     <button class="btn-unavail" disabled>Unavailable</button>
                 @endif
-                <button class="report-btn" onclick="openReport({{ $spot->id }}, '{{ $spot->spot_number }}')">Report issue</button>
+
+                {{-- Report button (always visible) --}}
+                <button class="report-btn" onclick="openReport({{ $spot->id }}, '{{ $spot->spot_number }}')">
+                    Report issue
+                </button>
+
+                {{-- Admin controls --}}
                 @if(auth()->user()->role === 'admin')
                     <div class="admin-actions">
                         @if($spot->status !== 'reserved')
@@ -181,34 +246,54 @@
                                 <button type="submit" class="admin-btn admin-btn-ghost" style="width:100%;">Toggle</button>
                             </form>
                         @endif
-                        <a href="{{ route('spots.edit', $spot->id) }}" class="admin-btn admin-btn-ghost" style="text-align:center;text-decoration:none;padding:6px 0;display:block;flex:1;">Edit</a>
-                        <form method="POST" action="{{ route('spots.delete', $spot->id) }}" onsubmit="return confirm('Delete {{ $spot->spot_number }}?');" style="flex:1;">
+                        <a href="{{ route('spots.edit', $spot->id) }}"
+                           class="admin-btn admin-btn-ghost"
+                           style="text-align:center;text-decoration:none;padding:6px 0;display:block;flex:1;">Edit</a>
+                        <form method="POST" action="{{ route('spots.delete', $spot->id) }}"
+                              onsubmit="return confirm('Delete {{ $spot->spot_number }}?');"
+                              style="flex:1;">
                             @csrf
                             <button type="submit" class="admin-btn admin-btn-del" style="width:100%;">Del</button>
                         </form>
                     </div>
                 @endif
+
             </div>
         @endforeach
     </div>
+
+    {{-- Pagination --}}
     <div class="pagination">
-        @if($spots->onFirstPage()) <span class="page-btn disabled">← Prev</span>
-        @else <a class="page-btn" href="{{ $spots->previousPageUrl() }}">← Prev</a> @endif
+        @if($spots->onFirstPage())
+            <span class="page-btn disabled">← Prev</span>
+        @else
+            <a class="page-btn" href="{{ $spots->previousPageUrl() }}">← Prev</a>
+        @endif
+
         <span class="page-btn current">{{ $spots->currentPage() }} / {{ $spots->lastPage() }}</span>
-        @if($spots->hasMorePages()) <a class="page-btn" href="{{ $spots->nextPageUrl() }}">Next →</a>
-        @else <span class="page-btn disabled">Next →</span> @endif
+
+        @if($spots->hasMorePages())
+            <a class="page-btn" href="{{ $spots->nextPageUrl() }}">Next →</a>
+        @else
+            <span class="page-btn disabled">Next →</span>
+        @endif
     </div>
+
 @else
     <div class="empty-state" style="background:#0f172a;border:0.5px solid rgba(255,255,255,0.08);">
         <div class="empty-icon">🅿</div>
         <div class="empty-title">No spots found</div>
         <div class="empty-text">
-            @if(request()->hasAny(['search','status','type'])) Try resetting your filters.
-            @else Use "Generate" to automatically create spots for this location. @endif
+            @if(request()->hasAny(['search', 'status', 'type']))
+                Try resetting your filters.
+            @else
+                Use "Generate" to automatically create spots for this location.
+            @endif
         </div>
     </div>
 @endif
 
+{{-- ── REPORT MODAL ─────────────────────────────────────────────────────── --}}
 <div class="modal-overlay" id="reportModal">
     <div class="modal-box">
         <div class="modal-title">Report an Issue</div>
@@ -234,6 +319,7 @@
 </div>
 
 <script>
+// ── Report modal ────────────────────────────────────────────────────────────
 function openReport(spotId, spotNum) {
     document.getElementById('reportModal').classList.add('open');
     document.getElementById('reportModalSub').textContent = 'Spot ' + spotNum;
@@ -242,8 +328,28 @@ function openReport(spotId, spotNum) {
 function closeReport() {
     document.getElementById('reportModal').classList.remove('open');
 }
-document.getElementById('reportModal').addEventListener('click', function(e) {
+document.getElementById('reportModal').addEventListener('click', function (e) {
     if (e.target === this) closeReport();
 });
+
+// ── Live deposit calculator ─────────────────────────────────────────────────
+const DEPOSIT_RATES = { 1: 0.10, 2: 0.20, 4: 0.35, 8: 0.50 };
+
+function updateDeposit(spotId, rate, hours) {
+    const el = document.getElementById('deposit-info-' + spotId);
+    if (!el) return;
+
+    hours = parseInt(hours);
+    rate  = parseFloat(rate);
+
+    if (rate <= 0) {
+        el.textContent = 'Free parking — no deposit';
+        return;
+    }
+
+    const total   = rate * hours;
+    const deposit = (total * DEPOSIT_RATES[hours]).toFixed(2);
+    el.textContent = 'Deposit: ' + deposit + ' KM (of ' + total.toFixed(2) + ' KM total)';
+}
 </script>
 @endsection

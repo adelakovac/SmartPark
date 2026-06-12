@@ -271,7 +271,7 @@
                      data-name="{{ strtolower($loc['name']) }}"
                      data-city="{{ strtolower($loc['city']) }}"
                      onclick="focusLoc({{ $loc['id'] }})">
-                    <div class="loc-item-rate">€{{ number_format($loc['hourly_rate'], 2) }}/h</div>
+                    <div class="loc-item-rate">{{ number_format($loc["hourly_rate"], 2) }} KM/h</div>
                     <div class="loc-item-name">{{ $loc['name'] }}</div>
                     <div class="loc-item-addr">📍 {{ $loc['address'] }}, {{ $loc['city'] }}</div>
                     <div class="loc-pills">
@@ -335,7 +335,7 @@ function popupHtml(loc) {
     return `<div class="sp-popup">
         <h3>${loc.name}</h3>
         <div class="addr">📍 ${loc.address}, ${loc.city}</div>
-        <div class="info-row"><span>⏰ ${loc.opening_hours}</span><span style="font-weight:700;color:#2563eb;">€${parseFloat(loc.hourly_rate).toFixed(2)}/hr</span></div>
+        <div class="info-row"><span>⏰ ${loc.opening_hours}</span><span style="font-weight:700;color:#2563eb;">${parseFloat(loc.hourly_rate).toFixed(2)} KM/hr</span></div>
         <div class="stats">
             <div class="sbox"><div class="snum" style="color:${c}">${s.available}</div><div class="slbl">Free</div></div>
             <div class="sbox"><div class="snum" style="color:#f59e0b">${s.reserved}</div><div class="slbl">Reserved</div></div>

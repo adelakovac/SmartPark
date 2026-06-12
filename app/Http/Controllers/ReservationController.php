@@ -10,7 +10,18 @@ use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
-    public function index()
+    // Deposit percentages based on duration
+    // Longer reservation = higher deposit (more commitment required)
+    const DEPOSIT_RATES = [
+        1 => 0.10,  // 1 hour  → 10% deposit
+        2 => 0.20,  // 2 hours → 20% deposit
+        4 => 0.35,  // 4 hours → 35% deposit
+        8 => 0.50,  // 8 hours → 50% deposit
+    ];
+
+    const MAX_ACTIVE_RESERVATIONS = 1;
+
+    private function cleanupExpired(): void
     {
         Reservation::where('expires_at', '<', now())->each(function ($r) {
             if ($r->spot) {
@@ -18,6 +29,11 @@ class ReservationController extends Controller
             }
             $r->delete();
         });
+    }
+
+    public function index()
+    {
+        $this->cleanupExpired();
 
         $reservations = Reservation::with(['spot.location'])
             ->where('user_id', auth()->id())
@@ -29,12 +45,7 @@ class ReservationController extends Controller
 
     public function adminIndex()
     {
-        Reservation::where('expires_at', '<', now())->each(function ($r) {
-            if ($r->spot) {
-                $r->spot->update(['status' => 'available']);
-            }
-            $r->delete();
-        });
+        $this->cleanupExpired();
 
         $reservations = Reservation::with(['spot.location', 'user'])
             ->latest()
@@ -71,6 +82,18 @@ class ReservationController extends Controller
 
         $hours = (int) $validated['duration'];
 
+        // Check active reservation limit
+        $activeCount = Reservation::where('user_id', auth()->id())
+            ->where('expires_at', '>', now())
+            ->count();
+
+        if ($activeCount >= self::MAX_ACTIVE_RESERVATIONS) {
+            return redirect()->back()->with(
+                'error',
+                'You already have an active reservation. You can only hold 1 reservation at a time. Please cancel your current reservation before making a new one.'
+            );
+        }
+
         try {
             DB::transaction(function () use ($spotId, $hours) {
                 $spot = ParkingSpot::lockForUpdate()->findOrFail($spotId);
@@ -78,6 +101,12 @@ class ReservationController extends Controller
                 if ($spot->status !== 'available') {
                     throw new \Exception('This spot is no longer available.');
                 }
+
+                // Calculate deposit
+                $hourlyRate    = $spot->location->hourly_rate ?? 0;
+                $totalCost     = $hourlyRate * $hours;
+                $depositRate   = self::DEPOSIT_RATES[$hours];
+                $depositAmount = round($totalCost * $depositRate, 2);
 
                 $spot->update(['status' => 'reserved']);
 
@@ -87,10 +116,18 @@ class ReservationController extends Controller
                     'user_name'       => auth()->user()->name,
                     'reserved_at'     => now(),
                     'expires_at'      => now()->addHours($hours),
+                    'duration_hours'  => $hours,
+                    'total_cost'      => $totalCost,
+                    'deposit_amount'  => $depositAmount,
+                    'deposit_rate'    => $depositRate,
                 ]);
             });
 
-            return redirect()->back()->with('success', "Spot reserved for {$hours} hour(s)! It will expire automatically if unused.");
+            $depositRate = self::DEPOSIT_RATES[$hours] * 100;
+            return redirect()->back()->with(
+                'success',
+                "Spot reserved for {$hours} hour(s)! A deposit of {$depositRate}% of the total cost has been charged. Your reservation will expire automatically if unused."
+            );
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }

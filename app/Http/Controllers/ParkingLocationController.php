@@ -47,7 +47,7 @@ class ParkingLocationController extends Controller
             'latitude'      => 'nullable|numeric|between:-90,90',
             'longitude'     => 'nullable|numeric|between:-180,180',
             'hourly_rate'   => 'nullable|numeric|min:0',
-            'opening_hours' => 'nullable|string|max:100',
+            'opening_hours' => ['nullable', 'regex:/^([01]?[0-9]|2[0-4]):[0-5][0-9] - ([01]?[0-9]|2[0-4]):[0-5][0-9]$/', 'max:100'],
         ]);
 
         ParkingLocation::create($validated);
@@ -102,7 +102,7 @@ class ParkingLocationController extends Controller
             'latitude'      => 'nullable|numeric|between:-90,90',
             'longitude'     => 'nullable|numeric|between:-180,180',
             'hourly_rate'   => 'nullable|numeric|min:0',
-            'opening_hours' => 'nullable|string|max:100',
+            'opening_hours' => ['nullable', 'regex:/^([01]?[0-9]|2[0-4]):[0-5][0-9] - ([01]?[0-9]|2[0-4]):[0-5][0-9]$/', 'max:100'],
         ]);
 
         $location->update($validated);

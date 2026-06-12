@@ -2,6 +2,8 @@
 @section('title', 'Locations')
 
 @section('content')
+
+{{-- ── PAGE HEADER ─────────────────────────────────────────────────────── --}}
 <div class="page-header">
     <div>
         <div class="page-title">Parking Locations</div>
@@ -15,6 +17,7 @@
     </div>
 </div>
 
+{{-- ── FILTERS ──────────────────────────────────────────────────────────── --}}
 <div class="filter-box">
     <form method="GET" action="/locations">
         <div class="filter-row">
@@ -27,7 +30,9 @@
                 <select name="city">
                     <option value="">All Cities</option>
                     @foreach($cities as $city)
-                        <option value="{{ $city }}" {{ request('city') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                        <option value="{{ $city }}" {{ request('city') == $city ? 'selected' : '' }}>
+                            {{ $city }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -42,6 +47,7 @@
     </form>
 </div>
 
+{{-- ── LOCATION CARDS ───────────────────────────────────────────────────── --}}
 @if($locations->count() > 0)
     <div class="grid-cards">
         @foreach($locations as $location)
@@ -58,7 +64,9 @@
                     <div class="loc-card-name">{{ $location->name }}</div>
                     <div class="loc-card-addr">📍 {{ $location->address }}, {{ $location->city }}</div>
                 </div>
+
                 <div class="loc-card-body">
+                    {{-- Availability badges --}}
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
                         @if($total === 0)
                             <span class="badge badge-gray">No spots generated</span>
@@ -68,6 +76,8 @@
                             @if($occ > 0)<span class="badge badge-red">{{ $occ }} occupied</span>@endif
                         @endif
                     </div>
+
+                    {{-- Availability bar --}}
                     @if($total > 0)
                         <div class="avail-bar">
                             <div class="avail-fill" style="width:{{ $pct }}%; background:{{ $color }};"></div>
@@ -76,16 +86,34 @@
                     @else
                         <div class="avail-label">Planned capacity: {{ $location->total_spots }}</div>
                     @endif
-                    @if($location->hourly_rate)
-                        <div class="meta" style="margin-top:8px;">💶 €{{ number_format($location->hourly_rate, 2) }}/hour · ⏰ {{ $location->opening_hours }}</div>
+
+                    {{-- Price & hours --}}
+                    @if($location->hourly_rate || $location->opening_hours)
+                        <div class="meta" style="margin-top:8px;">
+                            @if($location->hourly_rate)
+                                💰 {{ number_format($location->hourly_rate, 2) }} KM/hr
+                            @endif
+                            @if($location->hourly_rate && $location->opening_hours)
+                                &nbsp;·&nbsp;
+                            @endif
+                            @if($location->opening_hours)
+                                ⏰ {{ $location->opening_hours }}
+                            @endif
+                        </div>
                     @endif
                 </div>
+
                 <div class="loc-card-footer">
-                    <a href="{{ route('locations.show', $location->id) }}" class="btn btn-primary btn-sm" style="flex:1; justify-content:center;">View Spots</a>
+                    <a href="{{ route('locations.show', $location->id) }}"
+                       class="btn btn-primary btn-sm"
+                       style="flex:1; justify-content:center;">
+                        View Spots
+                    </a>
                 </div>
             </div>
         @endforeach
     </div>
+
 @else
     <div class="empty-state">
         <div class="empty-icon">🏢</div>
@@ -96,4 +124,5 @@
         @endif
     </div>
 @endif
+
 @endsection

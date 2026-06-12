@@ -12,11 +12,18 @@ class Reservation extends Model
         'user_name',
         'reserved_at',
         'expires_at',
+        'duration_hours',
+        'total_cost',
+        'deposit_amount',
+        'deposit_rate',
     ];
 
     protected $casts = [
-        'reserved_at' => 'datetime',
-        'expires_at'  => 'datetime',
+        'reserved_at'    => 'datetime',
+        'expires_at'     => 'datetime',
+        'total_cost'     => 'decimal:2',
+        'deposit_amount' => 'decimal:2',
+        'deposit_rate'   => 'decimal:4',
     ];
 
     public function spot()

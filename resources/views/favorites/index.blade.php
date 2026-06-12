@@ -48,7 +48,7 @@
                         <div class="avail-label">{{ $pct }}% available · {{ $total }} total</div>
                     @endif
                     @if($loc->hourly_rate)
-                        <div class="meta" style="margin-top:8px;">💶 €{{ number_format($loc->hourly_rate,2) }}/hr · ⏰ {{ $loc->opening_hours }}</div>
+                        <div class="meta" style="margin-top:8px;">💰 {{ number_format($loc->hourly_rate, 2) }} KM/hr · ⏰ {{ $loc->opening_hours }}</div>
                     @endif
                 </div>
                 <div class="loc-card-footer">
