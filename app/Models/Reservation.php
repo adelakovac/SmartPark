@@ -11,6 +11,7 @@ class Reservation extends Model
         'user_id',
         'user_name',
         'reserved_at',
+        'arrival_time',
         'expires_at',
         'duration_hours',
         'total_cost',
@@ -20,6 +21,7 @@ class Reservation extends Model
 
     protected $casts = [
         'reserved_at'    => 'datetime',
+        'arrival_time'   => 'datetime',
         'expires_at'     => 'datetime',
         'total_cost'     => 'decimal:2',
         'deposit_amount' => 'decimal:2',
